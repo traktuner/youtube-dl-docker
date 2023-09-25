@@ -114,7 +114,7 @@ jobs:
         with:
           # relative path to the place where source code with Dockerfile is located
           context: .
-          file: Dockerfile
+          file: server/Dockerfile
           platforms: linux/amd64,linux/arm64
           # Note: tags has to be all lower-case
           tags: |
