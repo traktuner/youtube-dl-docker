@@ -49,30 +49,29 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build image and push to Docker Hub and GitHub Container Registry
-        runs-on: ubuntu-latest
-        steps:
-          - name: Check out repository code
-            uses: actions/checkout@v3
+      - name: Check out repository code
+        uses: actions/checkout@v3
 
-          - name: Change ownership to 1000:1000
-            run: sudo chown -R 1000:1000 .
-            
-          - name: Build Frontend
-            working-directory: ./frontend
-            run: |
-              bash ./build.sh
-          - run: docker-compose build
-            tags: |
-              ghcr.io/traktuner/youtube-dl-frontend:latest            
-              ghcr.io/traktuner/youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }}
-              ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-frontend:latest
-              ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }}
-            # build on feature branches, push only on main branch
-            push: ${{ github.ref == 'refs/heads/master' }}
+      - name: Change ownership to 1000:1000
+        run: sudo chown -R 1000:1000 .
 
-      - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: |
+          bash ./build.sh
+      - run: docker-compose build
+
+      - name: Push Version Tag and Latest Tag to Docker Hub and GitHub Container Registry
+        run: |
+          docker tag youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }} ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }}
+          docker tag youtube-dl-frontend:latest ghcr.io/traktuner/youtube-dl-frontend:latest
+          docker push ghcr.io/traktuner/youtube-dl-frontend:latest
+
+          docker tag youtube-dl-frontend:latest ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-frontend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-frontend:latest
+          docker tag youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }} ghcr.io/traktuner/youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }}
+          docker push ghcr.io/traktuner/youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }}
 
 
         
@@ -130,6 +129,3 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-server:1.${{ github.run_number }}.${{ github.run_attempt }}
           # build on feature branches, push only on main branch
           push: ${{ github.ref == 'refs/heads/master' }}
-
-      - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
