@@ -15,6 +15,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Change ownership to 1000:1000
+        run: sudo chown -R 1000:1000 .
+
       - name: Run numbers
         run: |
           echo -e " RunId: $GITHUB_RUN_ID \n RunAttempt: $GITHUB_RUN_ATTEMPT \n RunNumber: $GITHUB_RUN_NUMBER"
