@@ -9,7 +9,7 @@ on:
 
 jobs:
   build_nginx:
-    name: 'Build youtube-dl-web'
+    name: 'Build youtube-dl-frontend'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
