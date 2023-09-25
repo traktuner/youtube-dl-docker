@@ -8,10 +8,16 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_frontend:
+  build_nginx:
     name: 'Build youtube-dl-frontend'
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Change ownership to 1000:1000
+        run: sudo chown -R 1000:1000 .
+
       - name: Run numbers
         run: |
           echo -e " RunId: $GITHUB_RUN_ID \n RunAttempt: $GITHUB_RUN_ATTEMPT \n RunNumber: $GITHUB_RUN_NUMBER"
@@ -43,83 +49,74 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check out repository code
+      - name: Build image and push to Docker Hub and GitHub Container Registry
+        uses: docker/build-push-action@v4
+        with:
+          # relative path to the place where source code with Dockerfile is located
+          context: .
+          file: nginx/Dockerfile.nossl
+          platforms: linux/amd64,linux/arm64
+          # Note: tags has to be all lower-case
+          tags: |
+            ghcr.io/traktuner/youtube-dl-frontend:latest            
+            ghcr.io/traktuner/youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }}
+          # build on feature branches, push only on main branch
+          push: ${{ github.ref == 'refs/heads/master' }}
+
+        
+
+  build_server:
+    name: 'Build youtube-dl-server'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Change ownership to 1000:1000
-        run: sudo chown -R 1000:1000 .
-
-      - name: Build Frontend
-        working-directory: ./frontend
+      - name: Run numbers
         run: |
-          bash ./build.sh
-      - run: docker-compose build
-
-      - name: Push Version Tag and Latest Tag to Docker Hub and GitHub Container Registry
-        run: |
-          docker tag youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }} ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }}
-          docker tag youtube-dl-frontend:latest ghcr.io/traktuner/youtube-dl-frontend:latest
-          docker push ghcr.io/traktuner/youtube-dl-frontend:latest
-
-          docker tag youtube-dl-frontend:latest ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-frontend:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-frontend:latest
-          docker tag youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }} ghcr.io/traktuner/youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }}
-          docker push ghcr.io/traktuner/youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }}
-
-
+          echo -e " RunId: $GITHUB_RUN_ID \n RunAttempt: $GITHUB_RUN_ATTEMPT \n RunNumber: $GITHUB_RUN_NUMBER"
         
-
-  # build_server:
-  #   name: 'Build youtube-dl-server'
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v3
-
-  #     - name: Run numbers
-  #       run: |
-  #         echo -e " RunId: $GITHUB_RUN_ID \n RunAttempt: $GITHUB_RUN_ATTEMPT \n RunNumber: $GITHUB_RUN_NUMBER"
-        
-  #     - name: Set up QEMU
-  #       id: qemu
-  #       uses: docker/setup-qemu-action@v2
+      - name: Set up QEMU
+        id: qemu
+        uses: docker/setup-qemu-action@v2
           
-  #     - name: Setup Docker Buildx
-  #       id: buildx
-  #       uses: docker/setup-buildx-action@v2
+      - name: Setup Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
 
-  #     - name: Builder instance name
-  #       run: echo ${{ steps.buildx.outputs.name }}
+      - name: Builder instance name
+        run: echo ${{ steps.buildx.outputs.name }}
 
-  #     - name: Available platforms
-  #       run: echo ${{ steps.qemu.outputs.platforms }}
+      - name: Available platforms
+        run: echo ${{ steps.qemu.outputs.platforms }}
 
-  #     - name: Login to DockerHub
-  #       uses: docker/login-action@v2
-  #       with:
-  #         username: ${{ secrets.DOCKERHUB_USERNAME }}
-  #         password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-  #     - name: Login to Github Packages
-  #       uses: docker/login-action@v2
-  #       with:
-  #         registry: ghcr.io
-  #         username: ${{ github.repository_owner }}
-  #         password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to Github Packages
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-  #     - name: Build image and push to Docker Hub and GitHub Container Registry
-  #       uses: docker/build-push-action@v4
-  #       with:
-  #         # relative path to the place where source code with Dockerfile is located
-  #         context: .
-  #         file: server/Dockerfile
-  #         platforms: linux/amd64,linux/arm64
-  #         # Note: tags has to be all lower-case
-  #         tags: |
-  #           ghcr.io/traktuner/youtube-dl-server:latest            
-  #           ghcr.io/traktuner/youtube-dl-server:1.${{ github.run_number }}.${{ github.run_attempt }}
-  #           ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-server:latest
-  #           ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-server:1.${{ github.run_number }}.${{ github.run_attempt }}
-  #         # build on feature branches, push only on main branch
-  #         push: ${{ github.ref == 'refs/heads/master' }}
+      - name: Build image and push to Docker Hub and GitHub Container Registry
+        uses: docker/build-push-action@v4
+        with:
+          # relative path to the place where source code with Dockerfile is located
+          context: server
+          file: ../Dockerfile
+          platforms: linux/amd64,linux/arm64
+          # Note: tags has to be all lower-case
+          tags: |
+            ghcr.io/traktuner/youtube-dl-server:latest            
+            ghcr.io/traktuner/youtube-dl-server:1.${{ github.run_number }}.${{ github.run_attempt }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-server:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-server:1.${{ github.run_number }}.${{ github.run_attempt }}
+          # build on feature branches, push only on main branch
+          push: ${{ github.ref == 'refs/heads/master' }}
