@@ -55,10 +55,10 @@ jobs:
           platforms: linux/amd64,linux/arm64
           # Note: tags has to be all lower-case
           tags: |
-            ghcr.io/traktuner/youtube-dl-web:latest            
-            ghcr.io/traktuner/youtube-dl-web:1.${{ github.run_number }}.${{ github.run_attempt }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-web:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-web:1.${{ github.run_number }}.${{ github.run_attempt }}
+            ghcr.io/traktuner/youtube-dl-frontend:latest            
+            ghcr.io/traktuner/youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-frontend:1.${{ github.run_number }}.${{ github.run_attempt }}
           # build on feature branches, push only on main branch
           push: ${{ github.ref == 'refs/heads/master' }}
 
@@ -114,10 +114,10 @@ jobs:
           platforms: linux/amd64,linux/arm64
           # Note: tags has to be all lower-case
           tags: |
-            ghcr.io/traktuner/youtube-dl-web-server:latest            
-            ghcr.io/traktuner/youtube-dl-web-server:1.${{ github.run_number }}.${{ github.run_attempt }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-web-server:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-web-server:1.${{ github.run_number }}.${{ github.run_attempt }}
+            ghcr.io/traktuner/youtube-dl-server:latest            
+            ghcr.io/traktuner/youtube-dl-server:1.${{ github.run_number }}.${{ github.run_attempt }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-server:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/youtube-dl-server:1.${{ github.run_number }}.${{ github.run_attempt }}
           # build on feature branches, push only on main branch
           push: ${{ github.ref == 'refs/heads/master' }}
 
